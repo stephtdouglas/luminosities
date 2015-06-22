@@ -7,26 +7,33 @@ import astropy.io.ascii as at
 
 def read_SEDs():
     """Read SEDs table (Adam's table)."""
-    kh = tools.read_table(FOLDER_DATA + KHTABLE5, raw=True)
-    coltemp = np.array(kh[10])
-    gmag = np.array(kh[2])
-    rmag = np.array(kh[3])
-    imag = np.array(kh[4])
+    kh = at.read('/home/stephanie/code/python/luminosities/models/kraushillenbrand5.dat')
+
+    # Save relevant arrays as variables
+    coltemp = kh["Teff"]
+    gmag =kh["Mg"]
+    rmag =kh["Mr"]
+    imag =kh["Mi"]
     numrows = len(rmag)
+
+    # Interpolation functions for Teff as a function of Absolute Magnitude
     gfunc = interp1d(gmag, coltemp, kind='linear')
     rfunc = interp1d(rmag, coltemp, kind='linear')
     ifunc = interp1d(imag, coltemp, kind='linear')
+
+    # I don't know what the following is doing
     slopes = np.zeros((numrows - 1, 3))
-    for ir in range(numrows):
-        if ir == numrows - 1: 
-            continue
-        slopes[ir, 0] = np.abs((coltemp[ir+1] - coltemp[ir]) / 
-                               (gmag[ir+1] - gmag[ir]))
-        slopes[ir, 1] = np.abs((coltemp[ir+1] - coltemp[ir]) / 
-                               (rmag[ir+1] - rmag[ir]))
-        slopes[ir, 2] = np.abs((coltemp[ir+1] - coltemp[ir]) / 
-                               (imag[ir+1] - imag[ir]))
-    magranges = [[-0.39,20.98], [-0.04,18.48], [0.34,15.85]] # gri; outside of these, func not valid!
+    slopes[:, 0] = np.abs(np.diff(coltemp) / np.diff(gmag))
+    slopes[:, 1] = np.abs(np.diff(coltemp) / np.diff(rmag))
+    slopes[:, 2] = np.abs(np.diff(coltemp) / np.diff(imag))
+
+    # Magnitude ranges where the interpolation functions are valid
+    # (for g,r,i)
+    mags = {"g":gmag,"r":rmag,"i":imag}
+    magranges = {"g":[-0.39,20.98], "r":[-0.04,18.48], "i":[0.34,15.85]}
+    slopes_dict = {"g":slopes[:, 0],"r":slopes[:, 1],"i":slopes[:, 2]}
+
+    return mags, magranges, slopes_dict
 
 
 def read_BCs()
