@@ -5,15 +5,17 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import astropy.io.ascii as at
 
+from constants import *
+
 def read_SEDs():
     """Read SEDs table (Adam's table)."""
-    kh = at.read('/home/stephanie/code/python/luminosities/models/kraushillenbrand5.dat')
+    kh = at.read(model_dir+'kraushillenbrand5.dat')
 
     # Save relevant arrays as variables
     coltemp = kh["Teff"]
-    gmag =kh["Mg"]
-    rmag =kh["Mr"]
-    imag =kh["Mi"]
+    gmag = kh["Mg"]
+    rmag = kh["Mr"]
+    imag = kh["Mi"]
     numrows = len(rmag)
 
     # Interpolation functions for Teff as a function of Absolute Magnitude
@@ -30,13 +32,14 @@ def read_SEDs():
     # Magnitude ranges where the interpolation functions are valid
     # (for g,r,i)
     mags = {"g":gmag,"r":rmag,"i":imag}
+    funcs = {"g":gfunc,"r":rfunc,"i":ifunc}
     magranges = {"g":[-0.39,20.98], "r":[-0.04,18.48], "i":[0.34,15.85]}
     slopes_dict = {"g":slopes[:, 0],"r":slopes[:, 1],"i":slopes[:, 2]}
 
-    return mags, magranges, slopes_dict
+    return mags, funcs, magranges, slopes_dict
 
 
-def read_BCs()
+def read_BCs():
    """Read BCs table (Girardi 2004)."""
    table_gir = tools.read_table(FOLDER_DATA + BCTABLE, raw=True)
    colTeff = np.array(table_gir[1])
