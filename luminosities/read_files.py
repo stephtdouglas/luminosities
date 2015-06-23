@@ -23,7 +23,7 @@ def read_SEDs():
     rfunc = interp1d(rmag, coltemp, kind='linear')
     ifunc = interp1d(imag, coltemp, kind='linear')
 
-    # I don't know what the following is doing
+    # Save the slopes separately, for computing uncertainties later
     slopes = np.zeros((numrows - 1, 3))
     slopes[:, 0] = np.abs(np.diff(coltemp) / np.diff(gmag))
     slopes[:, 1] = np.abs(np.diff(coltemp) / np.diff(rmag))
@@ -31,33 +31,46 @@ def read_SEDs():
 
     # Magnitude ranges where the interpolation functions are valid
     # (for g,r,i)
+    magranges = {"g":[-0.39,20.98], "r":[-0.04,18.48], "i":[0.34,15.85]}
     mags = {"g":gmag,"r":rmag,"i":imag}
     funcs = {"g":gfunc,"r":rfunc,"i":ifunc}
-    magranges = {"g":[-0.39,20.98], "r":[-0.04,18.48], "i":[0.34,15.85]}
     slopes_dict = {"g":slopes[:, 0],"r":slopes[:, 1],"i":slopes[:, 2]}
 
     return mags, funcs, magranges, slopes_dict
 
 
-def read_BCs():
-   """Read BCs table (Girardi 2004)."""
-   table_gir = tools.read_table(FOLDER_DATA + BCTABLE, raw=True)
-   colTeff = np.array(table_gir[1])
-   collogg = np.array(table_gir[2])
-   colBCg = np.array(table_gir[4])
-   colBCr = np.array(table_gir[5])
-   colBCi = np.array(table_gir[6])
-   iM37g = np.where(collogg == LOG_G)[0]
+def read_BCs(log_g=LOG_G):
+   """Read BCs table (Girardi 2004), compute interp1d functions at log_g."""
+
+   table_gir = at.read(model_dir+BCTABLE)
+
+    # Save relevant arrays as variables
+   colTeff = table_gir["Teff"]
+   collogg = table_gir["logg"]
+   colBCg =  table_gir["g"]
+   colBCr =  table_gir["r"]
+   colBCi =  table_gir["i"]
+
+   # Only keep log_g for dwarfs
+   iM37g = np.where(collogg==log_g)[0]
+
+   # Compute interpolation functions
    bcfuncg = interp1d(colTeff[iM37g], colBCg[iM37g], kind='linear')
    bcfuncr = interp1d(colTeff[iM37g], colBCr[iM37g], kind='linear')
    bcfunci = interp1d(colTeff[iM37g], colBCi[iM37g], kind='linear')
-   slopesBC = np.zeros((len(colTeff[iM37g]) - 1,3))
-   for it,te in enumerate(colTeff[iM37g]):
-       if it == len(colTeff[iM37g]) - 1: continue
-       slopesBC[it,0]= np.abs((colBCg[iM37g][it+1] - colBCg[iM37g][it]) / 
-                              (colTeff[iM37g][it+1] - te))
-       slopesBC[it,1]= np.abs((colBCr[iM37g][it+1] - colBCr[iM37g][it]) / 
-                              (colTeff[iM37g][it+1] - te))
-       slopesBC[it,2]= np.abs((colBCi[iM37g][it+1] - colBCi[iM37g][it]) / 
-                              (colTeff[iM37g][it+1] - te))
 
+   # Save the slopes separately, for computing uncertainties later
+   slopesBC = np.zeros((len(colTeff[iM37g]) - 1,3))
+   slopesBC[:,0]= np.abs(np.diff(colBCg[iM37g]) / np.diff(colTeff[iM37g]))
+   slopesBC[:,1]= np.abs(np.diff(colBCr[iM37g]) / np.diff(colTeff[iM37g]))
+   slopesBC[:,2]= np.abs(np.diff(colBCi[iM37g]) / np.diff(colTeff[iM37g]))
+
+    # Teff ranges where the interpolation functions are valid
+    # (for g,r,i)
+    teffrange = [min(colTeff[iM37g])*1.00001,max(colTeff[iM37g])*0.99999]
+    bcs = {"g":colBCg,"r":colBCr,"i":colBCi}
+    funcs = {"g":bcfuncg,"r":bcfuncr,"i":bcfunci}
+    slopes_dict = {"g":slopesBC[:, 0],"r":slopesBC[:, 1],"i":slopesBC[:, 2]}
+    teff_bins = colTeff[iM37g]
+
+    return funcs, teffrange, slopes_dict, teff_bins
