@@ -42,7 +42,7 @@ def read_SEDs():
 def read_BCs(log_g=LOG_G):
    """Read BCs table (Girardi 2004), compute interp1d functions at log_g."""
 
-   table_gir = at.read(model_dir+BCTABLE)
+   table_gir = at.read(model_dir+"bctab_p00.txt")
 
     # Save relevant arrays as variables
    colTeff = table_gir["Teff"]
@@ -65,12 +65,12 @@ def read_BCs(log_g=LOG_G):
    slopesBC[:,1]= np.abs(np.diff(colBCr[iM37g]) / np.diff(colTeff[iM37g]))
    slopesBC[:,2]= np.abs(np.diff(colBCi[iM37g]) / np.diff(colTeff[iM37g]))
 
-    # Teff ranges where the interpolation functions are valid
-    # (for g,r,i)
-    teffrange = [min(colTeff[iM37g])*1.00001,max(colTeff[iM37g])*0.99999]
-    bcs = {"g":colBCg,"r":colBCr,"i":colBCi}
-    funcs = {"g":bcfuncg,"r":bcfuncr,"i":bcfunci}
-    slopes_dict = {"g":slopesBC[:, 0],"r":slopesBC[:, 1],"i":slopesBC[:, 2]}
-    teff_bins = colTeff[iM37g]
+   # Teff ranges where the interpolation functions are valid
+   # (for g,r,i)
+   teffrange = [min(colTeff[iM37g])*1.00001,max(colTeff[iM37g])*0.99999]
+   bcs = {"g":colBCg,"r":colBCr,"i":colBCi}
+   funcs = {"g":bcfuncg,"r":bcfuncr,"i":bcfunci}
+   slopes_dict = {"g":slopesBC[:, 0],"r":slopesBC[:, 1],"i":slopesBC[:, 2]}
+   teff_bins = colTeff[iM37g]
 
-    return funcs, teffrange, slopes_dict, teff_bins
+   return funcs, teffrange, slopes_dict, teff_bins

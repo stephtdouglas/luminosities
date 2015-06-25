@@ -56,8 +56,8 @@ def calc_teff(abs_mags,unc_abs_mags,which_mag="r",null_mag=-9999.):
     mags, funcs, magranges, slopes = read_files.read_SEDs()
 
     # Find the range where the interpolation is valid
-    interp_range = np.where((mags_abs >= magranges[which_mag][0]) & 
-                            (mags_abs <= magranges[which_mag][1]))[0]
+    interp_range = np.where((abs_mags >= magranges[which_mag][0]) & 
+                            (abs_mags <= magranges[which_mag][1]))[0]
 
     # Interpolate where magnitudes are in the right range
     teff = np.ones(len(abs_mags))*null_mag
@@ -71,20 +71,20 @@ def calc_teff(abs_mags,unc_abs_mags,which_mag="r",null_mag=-9999.):
     digitized_mags = np.digitize(abs_mags,mags[which_mag][1:])
     unc_teff = np.ones(len(abs_mags))*null_mag
     for i,slp in enumerate(interp_slopes):
-        ibin = np.where(digitized == i)[0]
+        ibin = np.where(digitized_mags == i)[0]
         unc_teff[ibin] = slp * unc_abs_mags[ibin]
     unc_teff[abs_mags==null_mag] = null_mag
 
     return teff, unc_teff
 
-def calc_lbol(teff,unc_teff,which_mag="r",null_teff=-9999.):
+def calc_bc(teff,unc_teff,which_mag="r",null_teff=-9999.):
     """Convert T to bolometric correction in (g,r,i) with uncertainty."""
     
     funcs, teffrange, slopes, teff_bins = read_files.read_BCs()
 
     # Find the range where the interpolation is valid
-    interp_range = np.where((teff >= teffranges[0]) & 
-                            (teff <= teffranges[1]))[0]
+    interp_range = np.where((teff >= teffrange[0]) & 
+                            (teff <= teffrange[1]))[0]
 
     # Interpolate where Teffs are in the right range
     bol_corr = np.ones(len(teff))*null_teff
@@ -94,17 +94,17 @@ def calc_lbol(teff,unc_teff,which_mag="r",null_teff=-9999.):
     # Calculate uncertainty on the BCs
     # By binning abs_mags using the Girardi table as bins and the interp slopes
     interp_slopes = slopes[which_mag]
-    digitized_teffs = np.digitize(temps[interp_range], teff_bins[1:])
+    digitized_teffs = np.digitize(teff[interp_range], teff_bins[1:])
     unc_bol_corr = np.ones(len(teff))*null_teff
     for i,slp in enumerate(interp_slopes):
         ibin = np.where(digitized_teffs==i)[0]
-        unc_bol_corr[ibin] = slp * unc_abs_mags[ibin]
+        unc_bol_corr[ibin] = slp * unc_teff[ibin]
     unc_bol_corr[teff==null_teff] = null_teff
 
     return bol_corr, unc_bol_corr
 
 def lbol_wrapper(app_mags,unc_mags,distance,unc_distance,extinction,
-    which_mag="r",null_val=9999.)
+    which_mag="r",null_val=9999.):
     """Compute bolometric corrections using other functions from lbol.py."""
 
     abs_mags, unc_abs_mags = calc_abs_mags(app_mags,unc_mags,distance,
