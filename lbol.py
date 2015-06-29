@@ -43,10 +43,10 @@ def calc_lbol(mbol,unc_mbol,mbol_sun=MBOL_SUN,lbol_sun=LBOL_SUN,null_mag=-9999.)
     """Calculate bolometric magnitudes using solar values as reference."""
 
     lbol = lbol_sun * 10**((mbol_sun - mbol) / 2.5)
-    lbol[mbol==null_mag] = null_mag
+    lbol[(mbol==null_mag) | (np.isinf(mbol))] = null_mag
 
     unc_lbol = lbol * np.log(10.) * unc_mbol
-    unc_lbol[mbol==null_mag] = null_mag
+    unc_lbol[(mbol==null_mag) | (np.isinf(mbol))] = null_mag
 
     return lbol, unc_lbol
 
@@ -73,7 +73,8 @@ def calc_teff(abs_mags,unc_abs_mags,which_mag="r",null_mag=-9999.):
     for i,slp in enumerate(interp_slopes):
         ibin = np.where(digitized_mags == i)[0]
         unc_teff[ibin] = slp * unc_abs_mags[ibin]
-    unc_teff[abs_mags==null_mag] = null_mag
+    unc_teff[abs(abs_mags-null_mag)<1e-4] = null_mag
+    unc_teff[abs(teff-null_mag)<1e-4] = null_mag
 
     return teff, unc_teff
 
@@ -92,13 +93,13 @@ def calc_bc(teff,unc_teff,which_mag="r",null_teff=-9999.):
     bol_corr[interp_range] = interp_function(teff[interp_range])
 
     # Calculate uncertainty on the BCs
-    # By binning abs_mags using the Girardi table as bins and the interp slopes
+    # By binning Teffs using the Girardi table as bins and the interp slopes
     interp_slopes = slopes[which_mag]
     digitized_teffs = np.digitize(teff[interp_range], teff_bins[1:])
     unc_bol_corr = np.ones(len(teff))*null_teff
     for i,slp in enumerate(interp_slopes):
         ibin = np.where(digitized_teffs==i)[0]
-        unc_bol_corr[ibin] = slp * unc_teff[ibin]
+        unc_bol_corr[interp_range][ibin] = slp * unc_teff[interp_range][ibin]
     unc_bol_corr[teff==null_teff] = null_teff
 
     return bol_corr, unc_bol_corr
